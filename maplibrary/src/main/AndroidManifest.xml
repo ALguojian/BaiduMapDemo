@@ -31,19 +31,20 @@
     //鉴权所需该权限获取进程列表
     <uses-permission android:name="android.permission.CAMERA" />
     //使用步行AR导航，配置Camera权限
-    <application android:name=".MapApplication">
+    <application>
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
             android:value="xqi5YyucwlVUKrBeyRc2lE4tpiakz02l" />
 
-        <!--<activity android:name=".BaseMapActivity" />-->
+        <!-- <activity android:name=".BaseMapActivity" /> -->
         //多次定位必须添加该service，不然只有第一次生效
         <service
             android:name="com.baidu.location.f"
             android:enabled="true"
-            android:process=":remote"></service>
+            android:process=":remote" />
 
-        <activity android:name=".activity.CityActivity"></activity>
+        <activity android:name=".activity.CityActivity" />
+        <activity android:name=".activity.CustomerDetailsActivity"/>
     </application>
 
 </manifest>

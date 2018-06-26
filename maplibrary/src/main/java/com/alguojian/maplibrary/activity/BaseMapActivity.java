@@ -27,7 +27,6 @@ import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
-import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
@@ -41,7 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static com.alguojian.maplibrary.MapApplication.TTAG;
+import static com.alguojian.maplibrary.MapConstant.TTAG;
 
 /**
  * 地图页面
@@ -167,67 +166,12 @@ public abstract class BaseMapActivity extends AppCompatActivity {
         mReceiver = new MapSdkReceiver();
         registerReceiver(mReceiver, intentFilter);
 
-        findViewById(R.id.satellite).setOnClickListener(v -> mMap.setMapType(BaiduMap.MAP_TYPE_SATELLITE));
-        findViewById(R.id.common).setOnClickListener(v -> mMap.setMapType(BaiduMap.MAP_TYPE_NORMAL));
-        findViewById(R.id.rout).setOnClickListener(v -> mMap.setTrafficEnabled(true));
-        findViewById(R.id.location).setOnClickListener(v -> mLocationClient.restart());
-        findViewById(R.id.dialog).setOnClickListener(v -> setButtomDialog());
-        findViewById(R.id.large).setOnClickListener(v -> {
-            zoom++;
-            mMap.setMapStatus(MapStatusUpdateFactory.zoomTo(zoom));
-            getMarkerBean();
-        });
-        findViewById(R.id.small).setOnClickListener(v -> {
-            zoom--;
-            mMap.setMapStatus(MapStatusUpdateFactory.zoomTo(zoom));
-            getMarkerBean();
-        });
-
         setLocation();
         initListener();
         initData();
     }
 
     protected abstract int getLayout();
-
-    protected void setButtomDialog() {
-
-        CustomerDialog dialog = new CustomerDialog(this);
-        dialog.show();
-    }
-
-    /**
-     * 绘制前先要获得绘制view的数据集合
-     */
-    protected void getMarkerBean() {
-        //获取当前地图级别下比例尺所表示的距离大小
-        int mapLevel = mapView.getMapLevel();
-
-        //判断是否大于1000的缩放距离
-        if (mapLevel > INT) {
-            if (!flag) {
-                mMarkerViewBeans.clear();
-                mMap.clear();
-                mMarkerViewBeans.add(new MarkerViewBean(39.66919821012404, 116.59878014527642, 1));
-                mMarkerViewBeans.add(new MarkerViewBean(39.66838821029065, 116.59861688875051, 2));
-                mMarkerViewBeans.add(new MarkerViewBean(39.669242316835344, 116.59570191538805, 3));
-                setMarkerView(mMarkerViewBeans);
-            }
-
-            flag = true;
-
-        } else {
-            if (flag) {
-                mMap.clear();
-                mMarkerViewBeans.clear();
-                mMarkerViewBeans.add(new MarkerViewBean(39.66919821012404, 116.59878014527642, 1));
-                mMarkerViewBeans.add(new MarkerViewBean(39.66838821029065, 116.59861688875051, 2));
-                mMarkerViewBeans.add(new MarkerViewBean(39.669242316835344, 116.59570191538805, 3));
-                setMiniMarkerView(mMarkerViewBeans);
-            }
-            flag = false;
-        }
-    }
 
     /**
      * 设置定位信息
@@ -443,6 +387,48 @@ public abstract class BaseMapActivity extends AppCompatActivity {
     protected abstract void initData();
 
     /**
+     * 地图变化后的回调
+     * <p>
+     * //     * @param mapStatus 地图状态
+     */
+    protected abstract void onMapStatusChangeFinish(MapStatus mapStatus);
+
+    /**
+     * 绘制前先要获得绘制view的数据集合
+     */
+    protected void getMarkerBean() {
+        //获取当前地图级别下比例尺所表示的距离大小
+        int mapLevel = mapView.getMapLevel();
+
+        //判断是否大于1000的缩放距离
+        if (mapLevel > INT) {
+            if (!flag) {
+                mMarkerViewBeans.clear();
+                mMap.clear();
+                mMarkerViewBeans.add(new MarkerViewBean(39.66919821012404, 116.59878014527642, 1));
+                mMarkerViewBeans.add(new MarkerViewBean(39.66838821029065, 116.59861688875051, 2));
+                mMarkerViewBeans.add(new MarkerViewBean(39.669242316835344, 116.59570191538805, 3));
+                setMarkerView(mMarkerViewBeans);
+            }
+
+            flag = true;
+
+        } else {
+            if (flag) {
+                mMap.clear();
+                mMarkerViewBeans.clear();
+                mMarkerViewBeans.add(new MarkerViewBean(39.66919821012404, 116.59878014527642, 1));
+                mMarkerViewBeans.add(new MarkerViewBean(39.66838821029065, 116.59861688875051, 2));
+                mMarkerViewBeans.add(new MarkerViewBean(39.669242316835344, 116.59570191538805, 3));
+                setMiniMarkerView(mMarkerViewBeans);
+            }
+            flag = false;
+        }
+    }
+
+    protected abstract void onMarkerClick(Marker marker);
+
+    /**
      * 绘制view的覆盖物
      */
     protected void setMarkerView(List<MarkerViewBean> list) {
@@ -503,15 +489,6 @@ public abstract class BaseMapActivity extends AppCompatActivity {
         mMap.addOverlays(overlayOptions);
     }
 
-    /**
-     * 地图变化后的回调
-     * <p>
-     * //     * @param mapStatus 地图状态
-     */
-    protected abstract void onMapStatusChangeFinish(MapStatus mapStatus);
-
-    protected abstract void onMarkerClick(Marker marker);
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -519,6 +496,12 @@ public abstract class BaseMapActivity extends AppCompatActivity {
         mMap.setMyLocationEnabled(false);
         mLocationClient.stop();
         mapView.onDestroy();
+    }
+
+    protected void setButtomDialog() {
+
+        CustomerDialog dialog = new CustomerDialog(this);
+        dialog.show();
     }
 
     @Override

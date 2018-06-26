@@ -7,7 +7,7 @@ import android.util.Log;
 
 import com.baidu.mapapi.SDKInitializer;
 
-import static com.alguojian.maplibrary.MapApplication.TTAG;
+import static com.alguojian.maplibrary.MapConstant.TTAG;
 
 /**
  * 验证地图sdk的key是否正确的广播回调
@@ -25,7 +25,7 @@ public class MapSdkReceiver extends BroadcastReceiver {
 
         if (action != null && action.equals(SDKInitializer.SDK_BROADTCAST_ACTION_STRING_PERMISSION_CHECK_ERROR)) {
 
-            Log.d(TTAG,"key填写错误");
+            Log.d(TTAG, "key填写错误");
 
         }
     }

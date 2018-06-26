@@ -2,7 +2,7 @@ package com.alguojian.maplibrary;
 
 import android.util.Log;
 
-import static com.alguojian.maplibrary.MapApplication.TTAG;
+import static com.alguojian.maplibrary.MapConstant.TTAG;
 
 /**
  * 请求定位的错误码

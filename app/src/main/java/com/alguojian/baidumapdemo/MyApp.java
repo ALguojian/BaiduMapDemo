@@ -1,4 +1,4 @@
-package com.alguojian.maplibrary;
+package com.alguojian.baidumapdemo;
 
 import android.app.Application;
 
@@ -9,11 +9,9 @@ import com.baidu.mapapi.SDKInitializer;
  * ${Descript}
  *
  * @author alguojian
- * @date 2018/6/22
+ * @date 2018/6/26
  */
-public class MapApplication extends Application {
-
-    public static final String TTAG = "asdfghjkl";
+public class MyApp extends Application {
 
     @Override
     public void onCreate() {
