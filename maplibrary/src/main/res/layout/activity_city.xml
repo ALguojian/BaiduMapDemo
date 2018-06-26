@@ -11,7 +11,7 @@
         android:layout_height="match_parent"
         android:clickable="true"
         android:focusable="true"
-        tools:context=".activity.BaseMapActivity" />
+        tools:context=".activity.CityActivity" />
 
     <Button
         android:id="@+id/satellite"

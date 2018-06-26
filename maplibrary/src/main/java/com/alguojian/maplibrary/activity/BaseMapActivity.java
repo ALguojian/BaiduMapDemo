@@ -1,7 +1,5 @@
-package com.alguojian.maplibrary;
+package com.alguojian.maplibrary.activity;
 
-import android.content.Context;
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.os.Build;
@@ -14,6 +12,11 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ZoomControls;
 
+import com.alguojian.maplibrary.CustomerDialog;
+import com.alguojian.maplibrary.LocationErrorCode;
+import com.alguojian.maplibrary.MapSdkReceiver;
+import com.alguojian.maplibrary.MarkerViewBean;
+import com.alguojian.maplibrary.R;
 import com.baidu.location.BDAbstractLocationListener;
 import com.baidu.location.BDLocation;
 import com.baidu.location.LocationClient;
@@ -24,29 +27,47 @@ import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
+import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.map.Marker;
+import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.UiSettings;
 import com.baidu.mapapi.model.LatLng;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import static com.alguojian.maplibrary.MapApplication.TTAG;
 
 /**
  * 地图页面
+ *
+ * @author alguojian
+ * @date 2018.06.26
  */
-public class MapActivity extends AppCompatActivity {
+public abstract class BaseMapActivity extends AppCompatActivity {
 
-    private MapView mapView;
-    private BaiduMap mMap;
-    private LocationClient mLocationClient;
+    public static final int INT = 1000;
+    protected MapView mapView;
+    protected BaiduMap mMap;
+    protected LocationClient mLocationClient;
+    /**
+     * 用于标识是否上次大于100米的缩放
+     */
+    protected boolean flag;
+    /**
+     * 缩放级别默认为15，两千米比例尺，14是1千米，最大值22，最小是4
+     */
+    protected int zoom = 13;
+    /**
+     * 用于接受验证sdk的key的广播回调，实际没有发现回调
+     */
     private MapSdkReceiver mReceiver;
-
-    public static void start(Context context) {
-        Intent starter = new Intent(context, MapActivity.class);
-        context.startActivity(starter);
-    }
+    private ArrayList<MarkerViewBean> mMarkerViewBeans = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,8 +75,8 @@ public class MapActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         }
-        setContentView(R.layout.activity_map);
-        mapView = findViewById(R.id.bmapView);
+        setContentView(getLayout());
+        mapView = findViewById(R.id.mapView);
         mMap = mapView.getMap();
 
         // 隐藏logo
@@ -81,24 +102,26 @@ public class MapActivity extends AppCompatActivity {
         uiSettings.setRotateGesturesEnabled(false);
 
         //控制是否一并禁止所有手势，默认关闭。如果启用，所有手势都将被禁用。
-//        uiSettings.setAllGesturesEnabled(true);
+        //uiSettings.setAllGesturesEnabled(true);
 
         //隐藏地图上比例尺
-        mapView.showScaleControl(false);
+        mapView.showScaleControl(true);
 
-        //设置最大以及最小的缩放级别
-        //mMap.setMaxAndMinZoomLevel(float max, float min);
-        //获取当前地图级别下比例尺所表示的距离大小
-        //int mapLevel = mapView.getMapLevel();
-//        mMap.setMapStatus(MapStatusUpdateFactory.zoomTo(zoom));
+        //设置最大以及最小的缩放级别,4-21
+//        mMap.setMaxAndMinZoomLevel(21.0F,4.0F);
+
+
+//        mMap.setMapStatus(MapStatusUpdateFactory.zoomTo(21));
+//        mMap.setMapStatus(MapStatusUpdateFactory. newLatLngBounds(bounds));// 设置显示在屏幕中的地图地理范围
+
+//        mMap.setMapStatus(MapStatusUpdateFactory. newLatLngBounds(bounds),width, height);// 设置显示在屏幕中的地图地理
 //
 //        zoomTo（zoom）：直接设置指定的缩放级别
 //        zoomIn():放大地图缩放级别
 //        zoomOut()：缩小地图缩放级别
 
         // 隐藏缩放控件
-        mapView.showZoomControls(false);
-
+        mapView.showZoomControls(true);
 
         //高精度的定位
         mLocationClient = new LocationClient(this);
@@ -124,13 +147,13 @@ public class MapActivity extends AppCompatActivity {
         //需将配置好的LocationClientOption对象，通过setLocOption方法传递给LocationClient对象使用
         mLocationClient.setLocOption(locationClientOption);
 
-        BitmapDescriptor mCurrentMarker = BitmapDescriptorFactory.fromResource(R.drawable.ic_launcher_round);
+        BitmapDescriptor mCurrentMarker = BitmapDescriptorFactory.fromResource(R.drawable.shape_location);
 
         //设置定位之后的信息，图标，颜色等
         mMap.setMyLocationConfiguration(new MyLocationConfiguration(
                 MyLocationConfiguration.LocationMode.FOLLOWING,
                 true, mCurrentMarker,
-                0x00FFFF88,
+                0x1c3090ff,
                 0xff3090ff));
         // 开启定位图层
         mMap.setMyLocationEnabled(true);
@@ -144,32 +167,87 @@ public class MapActivity extends AppCompatActivity {
         mReceiver = new MapSdkReceiver();
         registerReceiver(mReceiver, intentFilter);
 
-
         findViewById(R.id.satellite).setOnClickListener(v -> mMap.setMapType(BaiduMap.MAP_TYPE_SATELLITE));
         findViewById(R.id.common).setOnClickListener(v -> mMap.setMapType(BaiduMap.MAP_TYPE_NORMAL));
         findViewById(R.id.rout).setOnClickListener(v -> mMap.setTrafficEnabled(true));
         findViewById(R.id.location).setOnClickListener(v -> mLocationClient.restart());
+        findViewById(R.id.dialog).setOnClickListener(v -> setButtomDialog());
+        findViewById(R.id.large).setOnClickListener(v -> {
+            zoom++;
+            mMap.setMapStatus(MapStatusUpdateFactory.zoomTo(zoom));
+            getMarkerBean();
+        });
+        findViewById(R.id.small).setOnClickListener(v -> {
+            zoom--;
+            mMap.setMapStatus(MapStatusUpdateFactory.zoomTo(zoom));
+            getMarkerBean();
+        });
 
         setLocation();
-
         initListener();
+        initData();
+    }
+
+    protected abstract int getLayout();
+
+    protected void setButtomDialog() {
+
+        CustomerDialog dialog = new CustomerDialog(this);
+        dialog.show();
+    }
+
+    /**
+     * 绘制前先要获得绘制view的数据集合
+     */
+    protected void getMarkerBean() {
+        //获取当前地图级别下比例尺所表示的距离大小
+        int mapLevel = mapView.getMapLevel();
+
+        //判断是否大于1000的缩放距离
+        if (mapLevel > INT) {
+            if (!flag) {
+                mMarkerViewBeans.clear();
+                mMap.clear();
+                mMarkerViewBeans.add(new MarkerViewBean(39.66919821012404, 116.59878014527642, 1));
+                mMarkerViewBeans.add(new MarkerViewBean(39.66838821029065, 116.59861688875051, 2));
+                mMarkerViewBeans.add(new MarkerViewBean(39.669242316835344, 116.59570191538805, 3));
+                setMarkerView(mMarkerViewBeans);
+            }
+
+            flag = true;
+
+        } else {
+            if (flag) {
+                mMap.clear();
+                mMarkerViewBeans.clear();
+                mMarkerViewBeans.add(new MarkerViewBean(39.66919821012404, 116.59878014527642, 1));
+                mMarkerViewBeans.add(new MarkerViewBean(39.66838821029065, 116.59861688875051, 2));
+                mMarkerViewBeans.add(new MarkerViewBean(39.669242316835344, 116.59570191538805, 3));
+                setMiniMarkerView(mMarkerViewBeans);
+            }
+            flag = false;
+        }
     }
 
     /**
      * 设置定位信息
      */
-    private void setLocation() {
+    protected void setLocation() {
         mLocationClient.registerLocationListener(new BDAbstractLocationListener() {
             @Override
             public void onReceiveLocation(BDLocation location) {
 
                 mLocationClient.stop();
 
+                Log.d(TTAG, location.getLatitude() + "---" + location.getLongitude());
+
                 Log.d(TTAG, "获得地址是" + location.getCountry() + location.getProvince() + location.getCity() + location.getDistrict() + location.getStreet());
 
                 MyLocationData builder = new MyLocationData.Builder()
                         .accuracy(location.getRadius())
-                        .direction(100).latitude(location.getLatitude())
+                        // 此处设置开发者获取到的方向信息，顺时针0-360
+                        .direction(0)
+                        .latitude(location.getLatitude())
                         .longitude(location.getLongitude()).build();
 
                 mMap.setMyLocationData(builder);
@@ -196,7 +274,6 @@ public class MapActivity extends AppCompatActivity {
      * 有关地图操作的一些监听
      */
     private void initListener() {
-
         //包含手势、设置地图状态或其他某种操作导致地图状态开始改变，地图状态变化中、地图状态改变结束等监听方法。
         mMap.setOnMapStatusChangeListener(
                 new BaiduMap.OnMapStatusChangeListener() {
@@ -207,7 +284,6 @@ public class MapActivity extends AppCompatActivity {
                      */
                     @Override
                     public void onMapStatusChangeStart(MapStatus mapStatus) {
-
                     }
 
                     /** 因某种操作导致地图状态开始改变。
@@ -219,7 +295,6 @@ public class MapActivity extends AppCompatActivity {
                      */
                     @Override
                     public void onMapStatusChangeStart(MapStatus mapStatus, int i) {
-
                     }
 
                     /**
@@ -228,7 +303,6 @@ public class MapActivity extends AppCompatActivity {
                      */
                     @Override
                     public void onMapStatusChange(MapStatus mapStatus) {
-
                     }
 
                     /**
@@ -237,7 +311,8 @@ public class MapActivity extends AppCompatActivity {
                      */
                     @Override
                     public void onMapStatusChangeFinish(MapStatus mapStatus) {
-
+                        BaseMapActivity.this.onMapStatusChangeFinish(mapStatus);
+                        getMarkerBean();
                     }
                 }
         );
@@ -253,6 +328,7 @@ public class MapActivity extends AppCompatActivity {
                     @Override
                     public void onMapClick(LatLng latLng) {
 
+                        Log.d(TTAG, "坐标为" + latLng.latitude + "---" + latLng.longitude);
                     }
 
                     /**
@@ -266,19 +342,20 @@ public class MapActivity extends AppCompatActivity {
                 });
 
         //地图加载完成回调接口
-        mMap.setOnMapLoadedCallback(new BaiduMap.OnMapLoadedCallback() {
-            /**
-             * 地图加载完成回调函数
-             */
-            @Override
-            public void onMapLoaded() {
+        mMap.setOnMapLoadedCallback(
+                new BaiduMap.OnMapLoadedCallback() {
+                    /**
+                     * 地图加载完成回调函数
+                     */
+                    @Override
+                    public void onMapLoaded() {
 
-                //支持利用setViewPadding方法 围绕地图边缘添加内边距。地图将继续充满整个屏幕，
-                // 但地图logo、比例尺、指南针、缩放按钮等控件、地图手势以及覆盖物，将调整在地图边界内操作。
+                        //支持利用setViewPadding方法 围绕地图边缘添加内边距。地图将继续充满整个屏幕，
+                        // 但地图logo、比例尺、指南针、缩放按钮等控件、地图手势以及覆盖物，将调整在地图边界内操作。
 //                mMap.setViewPadding(int left,int top, int right, int bottom);
 
-            }
-        });
+                    }
+                });
 
         //地图渲染完成回调接口
         mMap.setOnMapRenderCallbadk(
@@ -288,6 +365,7 @@ public class MapActivity extends AppCompatActivity {
                      */
                     @Override
                     public void onMapRenderFinished() {
+                        //不考虑在里面绘制覆盖物，回调太慢
 
                     }
                 });
@@ -327,6 +405,11 @@ public class MapActivity extends AppCompatActivity {
                      */
                     @Override
                     public boolean onMarkerClick(Marker marker) {
+
+                        BaseMapActivity.this.onMarkerClick(marker);
+
+                        Log.d(TTAG, "覆盖物点击事件监听" + marker.getTitle());
+
                         return false;
                     }
                 });
@@ -355,8 +438,79 @@ public class MapActivity extends AppCompatActivity {
             }
         });
 
-
     }
+
+    protected abstract void initData();
+
+    /**
+     * 绘制view的覆盖物
+     */
+    protected void setMarkerView(List<MarkerViewBean> list) {
+
+        ArrayList<OverlayOptions> overlayOptions = new ArrayList<>();
+
+        for (MarkerViewBean markerViewBean : list) {
+
+            View inflate = null;
+            switch (markerViewBean.getNum()) {
+                case 1:
+                    inflate = getLayoutInflater().inflate(R.layout.one_circle_view, null);
+                    break;
+                case 2:
+                    inflate = getLayoutInflater().inflate(R.layout.two_circle_view, null);
+                    break;
+                case 3:
+                    inflate = getLayoutInflater().inflate(R.layout.three_circle_view, null);
+                    break;
+                default:
+                    break;
+            }
+            BitmapDescriptor bdC = BitmapDescriptorFactory.fromView(inflate);
+
+            LatLng ll = new LatLng(markerViewBean.getLatitude(), markerViewBean.getLongitude());
+            OverlayOptions ooC = new MarkerOptions().position(ll)
+                    .icon(Objects.requireNonNull(bdC))
+                    .animateType(MarkerOptions.MarkerAnimateType.grow)
+                    .alpha(0.6f).perspective(true)
+                    .title("我是大" + markerViewBean.getNum());
+            overlayOptions.add(ooC);
+        }
+
+        mMap.addOverlays(overlayOptions);
+    }
+
+    /**
+     * 绘制小型标记点
+     *
+     * @param markerViewBeans
+     */
+    protected void setMiniMarkerView(ArrayList<MarkerViewBean> markerViewBeans) {
+
+        ArrayList<OverlayOptions> overlayOptions = new ArrayList<>();
+
+        for (MarkerViewBean markerViewBean : markerViewBeans) {
+
+            BitmapDescriptor bdC = BitmapDescriptorFactory.fromResource(R.drawable.list_icon_place);
+
+            LatLng ll = new LatLng(markerViewBean.getLatitude(), markerViewBean.getLongitude());
+            OverlayOptions ooC = new MarkerOptions().position(ll)
+                    .icon(Objects.requireNonNull(bdC))
+                    .animateType(MarkerOptions.MarkerAnimateType.jump)
+                    .alpha(0.6f).perspective(true)
+                    .title("我是小" + markerViewBean.getNum());
+            overlayOptions.add(ooC);
+        }
+        mMap.addOverlays(overlayOptions);
+    }
+
+    /**
+     * 地图变化后的回调
+     * <p>
+     * //     * @param mapStatus 地图状态
+     */
+    protected abstract void onMapStatusChangeFinish(MapStatus mapStatus);
+
+    protected abstract void onMarkerClick(Marker marker);
 
     @Override
     protected void onDestroy() {

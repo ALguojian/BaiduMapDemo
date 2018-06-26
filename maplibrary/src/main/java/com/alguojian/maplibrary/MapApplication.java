@@ -19,6 +19,7 @@ public class MapApplication extends Application {
     public void onCreate() {
         super.onCreate();
         SDKInitializer.initialize(this);
+        //设置定位经纬度模式-采用国测局标准方式
         SDKInitializer.setCoordType(CoordType.GCJ02);
     }
 }

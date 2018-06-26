@@ -23,7 +23,6 @@ public class MapSdkReceiver extends BroadcastReceiver {
 
         Log.d(TTAG, "验证key的结果是" + action);
 
-
         if (action != null && action.equals(SDKInitializer.SDK_BROADTCAST_ACTION_STRING_PERMISSION_CHECK_ERROR)) {
 
             Log.d(TTAG,"key填写错误");
