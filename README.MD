@@ -1,6 +1,24 @@
 ### 调用百度地图sdk
 
-创建应用-申请key
+#### 1. Add it in your root build.gradle at the end of repositories:
+```
+
+allprojects {
+        repositories {
+        ...
+            maven { url 'https://jitpack.io' }
+        }
+    }
+```
+#### 2. Add the dependency
+
+```
+dependencies {
+        implementation 'com.github.ALguojian:BaiduMapDemo:1.0.0'
+    }
+```
+
+#### 3. 创建应用-申请key
 
 获得debug版本的sha值
 
@@ -18,7 +36,9 @@ keytool -list -v -keystore 文件名.jks
 ```
 输入jks文件密码即可
 
-activity集成BaseMapActivity即可，地图的初始化等系列操作都在base里面做过
+
+
+#### 4. activity集成BaseMapActivity即可，地图的初始化等系列操作都在base里面做过
 
 ```
 public class CityActivity extends BaseMapActivity {
@@ -66,7 +86,7 @@ public class CityActivity extends BaseMapActivity {
 
 ```
 
-地图页面xml中地图应该如下，保持ID一致 `mapView`
+#### 5. 地图页面xml中地图应该如下，保持ID一致 `mapView`
 ```
  <com.baidu.mapapi.map.MapView
         android:id="@+id/mapView"
