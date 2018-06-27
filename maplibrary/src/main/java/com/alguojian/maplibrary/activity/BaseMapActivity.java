@@ -68,109 +68,10 @@ public abstract class BaseMapActivity extends AppCompatActivity {
     private MapSdkReceiver mReceiver;
     private ArrayList<MarkerViewBean> mMarkerViewBeans = new ArrayList<>();
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        }
-        setContentView(getLayout());
-        mapView = findViewById(R.id.mapView);
-        mMap = mapView.getMap();
-
-        // 隐藏logo
-        View child = mapView.getChildAt(1);
-        if (child != null && (child instanceof ImageView || child instanceof ZoomControls)) {
-            child.setVisibility(View.INVISIBLE);
-        }
-
-        //关闭指南针显示
-        UiSettings uiSettings = mMap.getUiSettings();
-        uiSettings.setCompassEnabled(false);
-
-        //控制是否启用或禁用平移的功能，默认开启。如果启用，则用户可以平移地图。
-        uiSettings.setScrollGesturesEnabled(true);
-
-        //控制是否启用或禁用缩放手势，默认开启。如果启用，用户可以双指点击或缩放地图视图
-        uiSettings.setZoomGesturesEnabled(true);
-
-        //控制是否启用或禁用俯视（3D）功能，默认开启。如果启用，则用户可使用双指 向下或向上滑动到俯视图
-        uiSettings.setOverlookingGesturesEnabled(false);
-
-        //控制是否启用或禁用地图旋转功能，默认开启。如果启用，则用户可使用双指 旋转来旋转地图
-        uiSettings.setRotateGesturesEnabled(false);
-
-        //控制是否一并禁止所有手势，默认关闭。如果启用，所有手势都将被禁用。
-        //uiSettings.setAllGesturesEnabled(true);
-
-        //隐藏地图上比例尺
-        mapView.showScaleControl(true);
-
-        //设置最大以及最小的缩放级别,4-21
-//        mMap.setMaxAndMinZoomLevel(21.0F,4.0F);
-
-
-//        mMap.setMapStatus(MapStatusUpdateFactory.zoomTo(21));
-//        mMap.setMapStatus(MapStatusUpdateFactory. newLatLngBounds(bounds));// 设置显示在屏幕中的地图地理范围
-
-//        mMap.setMapStatus(MapStatusUpdateFactory. newLatLngBounds(bounds),width, height);// 设置显示在屏幕中的地图地理
-//
-//        zoomTo（zoom）：直接设置指定的缩放级别
-//        zoomIn():放大地图缩放级别
-//        zoomOut()：缩小地图缩放级别
-
-        // 隐藏缩放控件
-        mapView.showZoomControls(true);
-
-        //高精度的定位
-        mLocationClient = new LocationClient(this);
-
-        LocationClientOption locationClientOption = new LocationClientOption();
-
-        //是否需要地址信息，默认为不需要，即参数为false
-        locationClientOption.setIsNeedAddress(true);
-
-        //可选，设置发起定位请求的间隔，int类型，单位ms
-        locationClientOption.setScanSpan(1000);
-
-        //可选，设置定位模式，默认高精度
-        locationClientOption.setLocationMode(LocationClientOption.LocationMode.Hight_Accuracy);
-
-        //可选，设置是否使用gps，默认false
-        locationClientOption.setOpenGps(true);
-
-        //可选，设置是否当GPS有效时按照1S/1次频率输出GPS结果，默认false
-        locationClientOption.setLocationNotify(true);
-
-        //mLocationClient为第二步初始化过的LocationClient对象
-        //需将配置好的LocationClientOption对象，通过setLocOption方法传递给LocationClient对象使用
-        mLocationClient.setLocOption(locationClientOption);
-
-        BitmapDescriptor mCurrentMarker = BitmapDescriptorFactory.fromResource(R.drawable.shape_location);
-
-        //设置定位之后的信息，图标，颜色等
-        mMap.setMyLocationConfiguration(new MyLocationConfiguration(
-                MyLocationConfiguration.LocationMode.FOLLOWING,
-                true, mCurrentMarker,
-                0x1c3090ff,
-                0xff3090ff));
-        // 开启定位图层
-        mMap.setMyLocationEnabled(true);
-
-        //打开室内图，默认为关闭状态
-        mMap.setIndoorEnable(true);
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(SDKInitializer.SDK_BROADTCAST_ACTION_STRING_PERMISSION_CHECK_ERROR);
-        intentFilter.addAction(SDKInitializer.SDK_BROADCAST_ACTION_STRING_NETWORK_ERROR);
-        mReceiver = new MapSdkReceiver();
-        registerReceiver(mReceiver, intentFilter);
-
-        setLocation();
-        initListener();
-        initData();
-    }
-
+    /**
+     * 布局文件ID
+     * @return
+     */
     protected abstract int getLayout();
 
     /**
@@ -426,6 +327,10 @@ public abstract class BaseMapActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * 覆盖物点击事件回调
+     * @param marker
+     */
     protected abstract void onMarkerClick(Marker marker);
 
     /**
@@ -489,19 +394,119 @@ public abstract class BaseMapActivity extends AppCompatActivity {
         mMap.addOverlays(overlayOptions);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        unregisterReceiver(mReceiver);
-        mMap.setMyLocationEnabled(false);
-        mLocationClient.stop();
-        mapView.onDestroy();
-    }
-
     protected void setButtomDialog() {
 
         CustomerDialog dialog = new CustomerDialog(this);
         dialog.show();
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        }
+        setContentView(getLayout());
+        mapView = findViewById(R.id.mapView);
+        mMap = mapView.getMap();
+
+        // 隐藏logo
+        View child = mapView.getChildAt(1);
+        if (child != null && (child instanceof ImageView || child instanceof ZoomControls)) {
+            child.setVisibility(View.INVISIBLE);
+        }
+
+        //关闭指南针显示
+        UiSettings uiSettings = mMap.getUiSettings();
+        uiSettings.setCompassEnabled(false);
+
+        //控制是否启用或禁用平移的功能，默认开启。如果启用，则用户可以平移地图。
+        uiSettings.setScrollGesturesEnabled(true);
+
+        //控制是否启用或禁用缩放手势，默认开启。如果启用，用户可以双指点击或缩放地图视图
+        uiSettings.setZoomGesturesEnabled(true);
+
+        //控制是否启用或禁用俯视（3D）功能，默认开启。如果启用，则用户可使用双指 向下或向上滑动到俯视图
+        uiSettings.setOverlookingGesturesEnabled(false);
+
+        //控制是否启用或禁用地图旋转功能，默认开启。如果启用，则用户可使用双指 旋转来旋转地图
+        uiSettings.setRotateGesturesEnabled(false);
+
+        //控制是否一并禁止所有手势，默认关闭。如果启用，所有手势都将被禁用。
+        //uiSettings.setAllGesturesEnabled(true);
+
+        //隐藏地图上比例尺
+        mapView.showScaleControl(true);
+
+        //设置最大以及最小的缩放级别,4-21
+//        mMap.setMaxAndMinZoomLevel(21.0F,4.0F);
+
+
+//        mMap.setMapStatus(MapStatusUpdateFactory.zoomTo(21));
+//        mMap.setMapStatus(MapStatusUpdateFactory. newLatLngBounds(bounds));// 设置显示在屏幕中的地图地理范围
+
+//        mMap.setMapStatus(MapStatusUpdateFactory. newLatLngBounds(bounds),width, height);// 设置显示在屏幕中的地图地理
+//
+//        zoomTo（zoom）：直接设置指定的缩放级别
+//        zoomIn():放大地图缩放级别
+//        zoomOut()：缩小地图缩放级别
+
+        // 隐藏缩放控件
+        mapView.showZoomControls(true);
+
+        //高精度的定位
+        mLocationClient = new LocationClient(this);
+
+        LocationClientOption locationClientOption = new LocationClientOption();
+
+        //是否需要地址信息，默认为不需要，即参数为false
+        locationClientOption.setIsNeedAddress(true);
+
+        //可选，设置发起定位请求的间隔，int类型，单位ms
+        locationClientOption.setScanSpan(1000);
+
+        //可选，设置定位模式，默认高精度
+        locationClientOption.setLocationMode(LocationClientOption.LocationMode.Hight_Accuracy);
+
+        //可选，设置是否使用gps，默认false
+        locationClientOption.setOpenGps(true);
+
+        //可选，设置是否当GPS有效时按照1S/1次频率输出GPS结果，默认false
+        locationClientOption.setLocationNotify(true);
+
+        //mLocationClient为第二步初始化过的LocationClient对象
+        //需将配置好的LocationClientOption对象，通过setLocOption方法传递给LocationClient对象使用
+        mLocationClient.setLocOption(locationClientOption);
+
+        BitmapDescriptor mCurrentMarker = BitmapDescriptorFactory.fromResource(R.drawable.shape_location);
+
+        //设置定位之后的信息，图标，颜色等
+        mMap.setMyLocationConfiguration(new MyLocationConfiguration(
+                MyLocationConfiguration.LocationMode.FOLLOWING,
+                true, mCurrentMarker,
+                0x1c3090ff,
+                0xff3090ff));
+        // 开启定位图层
+        mMap.setMyLocationEnabled(true);
+
+        //打开室内图，默认为关闭状态
+        mMap.setIndoorEnable(true);
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(SDKInitializer.SDK_BROADTCAST_ACTION_STRING_PERMISSION_CHECK_ERROR);
+        intentFilter.addAction(SDKInitializer.SDK_BROADCAST_ACTION_STRING_NETWORK_ERROR);
+        mReceiver = new MapSdkReceiver();
+        registerReceiver(mReceiver, intentFilter);
+
+        setLocation();
+        initListener();
+        initData();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapView.onResume();
     }
 
     @Override
@@ -511,8 +516,11 @@ public abstract class BaseMapActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        mapView.onResume();
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(mReceiver);
+        mMap.setMyLocationEnabled(false);
+        mLocationClient.stop();
+        mapView.onDestroy();
     }
 }
